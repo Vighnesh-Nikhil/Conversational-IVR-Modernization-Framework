@@ -32,34 +32,11 @@ This demonstrates:
 - Sample transaction validation
 =====================================================================
 """
-# ---------------------------------------------------------
-# Milestone 3: Conversational AI Interface Layer
-#
-# This layer enables natural language interaction with the
-# IVR system. Instead of pressing keypad digits, users can
-# enter requests in conversational form.
-#
-# Architecture Flow:
-# User Natural Language Input
-#        ↓
-# Intent Detection (Keyword + Pattern Matching)
-#        ↓
-# Entity Extraction (e.g., Patient ID)
-#        ↓
-# Mapping to Existing IVR Menu Options
-#        ↓
-# Routing to Legacy Menu Handler
-#        ↓
-# Existing IVR Logic Executes
-#
-# This approach preserves the existing IVR architecture
-# while introducing a conversational interface on top.
-# ---------------------------------------------------------
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 import uuid
-import re
+
 # ================================================================
 # CONFIGURATION SECTION
 # ================================================================
@@ -214,86 +191,3 @@ def handle_menu(input_data: MenuInputRequest):
             return {
                 "message": "Invalid Patient ID. Please enter correct ID."
             }
-
-
-# ---------------------------------------------------------
-# Conversational AI Layer (Milestone 3)
-# This function detects the user's intent from natural
-# language input and maps it to the corresponding IVR
-# menu option used in the existing system.
-# ---------------------------------------------------------
-
-def detect_intent(text: str):
-    # Convert input text to lowercase for easier matching
-    text = text.lower()
-    # Detect patient ID numbers (5+ digits)
-    match = re.search(r"\b\d{5,}\b", text)
-    if match:
-        return "patient_id:" + match.group()
-
-    # Intent: Lab Report Status
-    if any(word in text for word in ["report", "lab report", "report status"]):
-        return "1"
-
-    # Intent: Lab Working Hours
-    elif any(word in text for word in ["hour", "timing", "working hours"]):
-        return "2"
-
-    # Intent: Contact Support
-    elif any(word in text for word in ["support", "help", "contact"]):
-        return "3"
-
-    # Intent: Sample Collection Information
-    elif any(word in text for word in ["sample", "collection"]):
-        return "4"
-
-    # Intent: Request Email Copy of Report
-    elif any(word in text for word in ["email", "mail"]):
-        return "5"
-
-    # Intent: Exit the system
-    elif any(word in text for word in ["exit", "quit"]):
-        return "9"
-
-    # If no intent is recognized
-    return None
-
-
-# ---------------------------------------------------------
-# Conversational Endpoint (Milestone 3)
-# This endpoint allows users to interact with the IVR
-# system using natural language instead of pressing digits.
-# The detected intent is converted into the corresponding
-# IVR menu option and routed to the existing menu handler.
-# ---------------------------------------------------------
-
-@app.post("/converse")
-def converse(session_id: str, user_text: str):
-
-    # Detect intent from natural language input
-    digit = detect_intent(user_text)
-    # If patient ID is detected from natural language
-    if digit and digit.startswith("patient_id:"):
-        patient_id = digit.split(":")[1]
-
-        input_data = MenuInputRequest(
-            session_id=session_id,
-            user_input=patient_id
-        )
-
-        return handle_menu(input_data)
-
-    # If intent cannot be determined
-    if digit is None:
-        return {
-            "message": "Sorry, I didn't understand that. You can ask about lab report status, lab timings, support, sample collection, or email report."
-        }
-
-    # Create the same request structure used by the menu system
-    input_data = MenuInputRequest(
-        session_id=session_id,
-        user_input=digit
-    )
-
-    # Route to the existing IVR menu handler
-    return handle_menu(input_data)
