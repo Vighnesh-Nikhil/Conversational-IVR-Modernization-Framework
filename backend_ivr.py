@@ -305,3 +305,23 @@ def converse(session_id: str, user_text: str):
     )
 
     return handle_menu(input_data)
+# -------------------------------
+# Start Session Endpoint
+# -------------------------------
+
+import uuid
+
+sessions = {}
+
+@app.get("/start")
+def start_call(caller_name: str):
+    session_id = str(uuid.uuid4())
+
+    sessions[session_id] = {
+        "caller_name": caller_name
+    }
+
+    return {
+        "session_id": session_id,
+        "message": f"Welcome {caller_name}, how can I assist you?"
+    }
