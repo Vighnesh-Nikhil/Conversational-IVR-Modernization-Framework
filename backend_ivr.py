@@ -191,3 +191,107 @@ def handle_menu(input_data: MenuInputRequest):
             return {
                 "message": "Invalid Patient ID. Please enter correct ID."
             }
+
+# ---------------------------------------------------------
+# Conversational AI Layer (Milestone 3)
+# ---------------------------------------------------------
+# This layer allows users to interact with the IVR system
+# using natural language instead of pressing keypad digits.
+#
+# Flow:
+# User Text → Intent Detection → Map to IVR Option → Handle Menu
+# ---------------------------------------------------------
+
+import re
+
+def detect_intent(text: str):
+    """
+    Detects user intent from natural language input
+    and maps it to IVR menu options.
+    """
+
+    text = text.lower()
+
+    # ---------------------------------
+    # Entity Extraction (Patient ID)
+    # ---------------------------------
+    match = re.search(r"\b\d{4,}\b", text)
+    if match:
+        return "patient_id:" + match.group()
+
+    # ---------------------------------
+    # Intent Detection (Keyword Based)
+    # ---------------------------------
+
+    # Lab Report Status
+    if any(word in text for word in ["report", "lab report", "report status"]):
+        return "1"
+
+    # Lab Working Hours
+    elif any(word in text for word in ["hour", "timing", "working hours"]):
+        return "2"
+
+    # Contact Support
+    elif any(word in text for word in ["support", "help", "contact"]):
+        return "3"
+
+    # Sample Collection Info
+    elif any(word in text for word in ["sample", "collection"]):
+        return "4"
+
+    # Email Report
+    elif any(word in text for word in ["email", "mail"]):
+        return "5"
+
+    # Exit
+    elif any(word in text for word in ["exit", "quit"]):
+        return "9"
+
+    # Unknown intent
+    return None
+
+
+# ---------------------------------------------------------
+# Conversational Endpoint
+# ---------------------------------------------------------
+# This endpoint accepts natural language input
+# and routes it to existing IVR logic
+# ---------------------------------------------------------
+
+@app.post("/converse")
+def converse(session_id: str, user_text: str):
+    """
+    Converts user natural language into IVR actions
+    """
+
+    # Detect intent
+    result = detect_intent(user_text)
+
+    # If nothing understood
+    if result is None:
+        return {
+            "message": "Sorry, I didn't understand that. You can ask about lab reports, timings, support, or sample collection."
+        }
+
+    # ---------------------------------
+    # If Patient ID detected
+    # ---------------------------------
+    if result.startswith("patient_id:"):
+        patient_id = result.split(":")[1]
+
+        input_data = MenuInputRequest(
+            session_id=session_id,
+            user_input=patient_id
+        )
+
+        return handle_menu(input_data)
+
+    # ---------------------------------
+    # Normal intent → map to menu digit
+    # ---------------------------------
+    input_data = MenuInputRequest(
+        session_id=session_id,
+        user_input=result
+    )
+
+    return handle_menu(input_data)
