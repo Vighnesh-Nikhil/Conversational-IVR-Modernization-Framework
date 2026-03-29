@@ -46,6 +46,16 @@ VERSION = "2.0"
 
 app = FastAPI(title=APP_NAME)
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ================================================================
 # SIMULATED BACKEND DATABASE
 # ================================================================
