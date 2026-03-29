@@ -219,9 +219,10 @@ def detect_intent(text: str):
     Detects user intent from natural language input
     and maps it to IVR menu options.
     """
+    text = text.strip()
     # Direct digit input handling (for IVR keypad)
-    if text.strip() in ["1","2","3","4","5","9"]:
-        return text.strip()
+    if text.isdigit():
+        return text
     text = text.lower()
 
     # ---------------------------------
